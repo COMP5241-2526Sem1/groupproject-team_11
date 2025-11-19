@@ -1,0 +1,193 @@
+project/
+│
+├── src/ # 项目源代码目录
+│   ├── flask_backend.py # Flask 后端主程序，定义 API 路由
+│   ├── db_connection.py # 数据库连接模块
+│   ├── LLM.py # 调用大语言模型的模块
+│   ├── fetch_and_shuffle_groups.py # 小组信息的获取与打乱模块
+│   ├── random_student_selector.py # 随机点名模块
+│   ├── student_importer.py # 学生信息导入模块
+│   ├── activities.py # 活动相关接口模块
+│   ├── grade_statistics.py # 成绩统计与分析模块
+│   ├── poll_results.py # 投票结果处理模块
+│   ├── studentpoll.py # 学生投票相关接口模块
+│   ├── mindmap_generator.py # 思维导图生成模块
+│   └── utils.py # 通用工具函数模块
+│
+├── uploads/ # 存储上传的 Excel 文件（自动生成）
+│
+├── requirements.txt # 项目依赖文件
+├── README.md # 项目说明文档
+├── venv/ # 虚拟环境目录（可选，建议添加到 .gitignore）
+└── .env # 环境变量配置文件（存储敏感信息）
+
+# 项目接口列表
+
+## 接口说明
+以下是项目中所有可用的 API 接口：
+
+### 1. AI 聊天接口
+- **路径**: `/api/ai/chat`
+- **方法**: POST
+- **描述**: 处理用户输入文本并返回 AI 响应。
+- **测试 JSON**:
+```json
+{
+  "message": "Hello, AI!",
+  "topicId": "123",
+  "attachments": [],
+  "conversationHistory": []
+}
+```
+
+### 2. PPT 助手接口
+- **路径**: `/ppt_assistant`
+- **方法**: POST
+- **描述**: 根据用户输入生成 PPT 大纲。
+- **测试 JSON**:
+```json
+{
+  "message": "Generate a PPT outline for teaching Python.",
+  "topicId": "456",
+  "attachments": [],
+  "conversationHistory": []
+}
+```
+
+### 3. 随机学生选择接口
+- **路径**: `/random_student_selection`
+- **方法**: POST
+- **描述**: 随机选择学生。
+- **测试 JSON**:
+```json
+{
+  "course_id": "course_001",
+  "num_students": 3
+}
+```
+
+### 4. 小组打乱接口
+- **路径**: `/group_shuffle`
+- **方法**: POST
+- **描述**: 打乱课程中的小组。
+- **测试 JSON**:
+```json
+{
+  "course_id": "course_001"
+}
+```
+
+### 5. 上传学生信息接口
+- **路径**: `/import_students`
+- **方法**: POST
+- **描述**: 从 Excel 文件导入学生信息。
+- **测试 JSON**:
+无（需要上传文件）
+
+### 6. 上传课程材料接口
+- **路径**: `/upload_course_material`
+- **方法**: POST
+- **描述**: 上传课程材料并生成 PPT 大纲。
+- **测试 JSON**:
+无（需要上传文件）
+
+### 7. 删除成绩分析接口
+- **路径**: `/delete_quiz_analysis/<quiz_anal_id>`
+- **方法**: DELETE
+- **描述**: 删除指定的成绩分析记录。
+- **测试 JSON**:
+无（通过路径参数传递 `quiz_anal_id`）
+
+### 8. 获取成绩统计接口
+- **路径**: `/upload_grades/<quiz_anal_id>`
+- **方法**: GET
+- **描述**: 获取指定成绩分析的统计数据。
+- **测试 JSON**:
+无（通过路径参数传递 `quiz_anal_id`）
+
+### 9. 使用 AI 分析成绩接口
+- **路径**: `/analyze_grades_with_ai/<quiz_anal_id>`
+- **方法**: GET
+- **描述**: 使用 AI 分析成绩并返回详细见解。
+- **测试 JSON**:
+无（通过路径参数传递 `quiz_anal_id`）
+
+### 10. 更新 AI 分析接口
+- **路径**: `/update_ai_analysis/<quiz_anal_id>`
+- **方法**: GET
+- **描述**: 更新指定成绩分析的 AI 分析。
+- **测试 JSON**:
+无（通过路径参数传递 `quiz_anal_id`）
+
+### 11. 学生投票接口
+- **路径**: `/api/studentpoll`
+- **方法**: POST
+- **描述**: 创建学生投票。
+- **测试 JSON**:
+```json
+{
+  "title": "Class Poll",
+  "type": "Multiple Choice",
+  "activityType": "Poll",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "What is your favorite color?",
+      "type": "Single Choice",
+      "is_required": true,
+      "options": ["Red", "Blue", "Green"]
+    }
+  ]
+}
+```
+
+### 12. 查看学生投票接口
+- **路径**: `/api/studentpoll/<poll_id>`
+- **方法**: GET
+- **描述**: 查看学生投票详情。
+- **测试 JSON**:
+无（通过路径参数传递 `poll_id`）
+
+### 13. 提交投票答案接口
+- **路径**: `/api/studentpoll/<poll_id>`
+- **方法**: POST
+- **描述**: 提交学生投票答案。
+- **测试 JSON**:
+```json
+{
+  "user_id": "user_001",
+  "answers": [
+    {
+      "question_id": "q1",
+      "answer": "Red",
+      "question_type": "Single Choice"
+    }
+  ]
+}
+```
+
+### 14. 获取投票结果接口
+- **路径**: `/api/studentpoll/<poll_id>/results`
+- **方法**: GET
+- **描述**: 获取投票结果。
+- **测试 JSON**:
+无（通过路径参数传递 `poll_id`）
+
+### 15. 获取文本投票结果接口
+- **路径**: `/api/studentpoll/<poll_id>/text_results`
+- **方法**: GET
+- **描述**: 获取文本投票结果。
+- **测试 JSON**:
+无（通过路径参数传递 `poll_id`）
+
+### 16. 生成思维导图接口
+- **路径**: `/api/generate_mindmap`
+- **方法**: POST
+- **描述**: 根据用户提供的 JSON 生成 Markdown 思维导图。
+- **测试 JSON**:
+```json
+{
+  "content": "Artificial Intelligence"
+}
+```
+

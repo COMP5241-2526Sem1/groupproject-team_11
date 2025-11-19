@@ -1,0 +1,2250 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "互动教学平台 API",
+    "description": "Interactive Teaching Platform Backend API Specification",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Development Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "开发环境"
+    },
+    {
+      "url": "https://api.yourapp.com/api",
+      "description": "生产环境"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Activities",
+      "description": "活动管理相关接口"
+    },
+    {
+      "name": "Courses",
+      "description": "课程管理相关接口"
+    },
+    {
+      "name": "Course Items",
+      "description": "课程内容管理"
+    },
+    {
+      "name": "Responses",
+      "description": "学生回答相关接口"
+    },
+    {
+      "name": "Activity Logs",
+      "description": "活动日志"
+    },
+    {
+      "name": "Opinion Polls",
+      "description": "意见问卷"
+    },
+    {
+      "name": "Discussions",
+      "description": "讨论区"
+    },
+    {
+      "name": "AI Service",
+      "description": "AI助手服务"
+    },
+    {
+      "name": "Auth",
+      "description": "认证授权"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "用户登录",
+        "description": "使用邮箱和密码登录,返回JWT token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "teacher@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string",
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        },
+                        "user": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/activities": {
+      "get": {
+        "tags": ["Activities"],
+        "summary": "获取活动列表",
+        "description": "获取当前用户的所有活动,支持分页和筛选",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "活动类型筛选",
+            "schema": {
+              "type": "string",
+              "enum": ["quiz", "open-question", "scales-question", "mind-map", "ppt-generator"]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "搜索关键词",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取活动列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Activity"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Activities"],
+        "summary": "创建活动",
+        "description": "创建新的教学活动(Quiz/OpenQuestion/ScalesQuestion等)",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "活动创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Activity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/activities/{id}": {
+      "get": {
+        "tags": ["Activities"],
+        "summary": "获取单个活动",
+        "description": "根据活动ID获取活动详情",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "活动ID",
+            "schema": {
+              "type": "string",
+              "example": "activity_1705392000000"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取活动详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Activity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Activities"],
+        "summary": "更新活动",
+        "description": "更新已有活动的信息",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "活动ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "活动更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Activity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Activities"],
+        "summary": "删除活动",
+        "description": "删除指定的活动",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "活动ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Activity deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/activities/{activityId}/responses": {
+      "get": {
+        "tags": ["Responses"],
+        "summary": "获取活动的所有回答",
+        "description": "获取指定活动的所有学生回答",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "description": "活动ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取回答列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Response"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Responses"],
+        "summary": "提交回答",
+        "description": "学生提交活动回答",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "activityId",
+            "in": "path",
+            "required": true,
+            "description": "活动ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "回答提交成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Response"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses": {
+      "get": {
+        "tags": ["Courses"],
+        "summary": "获取课程列表",
+        "description": "获取所有课程,支持筛选",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "搜索关键词",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "课程状态",
+            "schema": {
+              "type": "string",
+              "enum": ["Open", "Closed", "Coming Soon"]
+            }
+          },
+          {
+            "name": "semester",
+            "in": "query",
+            "description": "学期筛选",
+            "schema": {
+              "type": "string",
+              "example": "2025 Sem1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取课程列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Course"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Courses"],
+        "summary": "创建课程",
+        "description": "创建新课程",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "课程创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Course"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{id}": {
+      "get": {
+        "tags": ["Courses"],
+        "summary": "获取单个课程",
+        "description": "根据课程ID获取课程详情",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "课程ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取课程详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Course"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Courses"],
+        "summary": "更新课程",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "课程更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Course"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Courses"],
+        "summary": "删除课程",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Course deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{courseId}/items": {
+      "get": {
+        "tags": ["Course Items"],
+        "summary": "获取课程所有内容",
+        "description": "获取课程的所有内容项(content/assignment/quiz)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取课程内容",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CourseItems"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Course Items"],
+        "summary": "添加课程内容",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentItemInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "内容添加成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ContentItem"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{courseId}/items/{itemId}": {
+      "delete": {
+        "tags": ["Course Items"],
+        "summary": "删除课程内容",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Item deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{courseId}/files/{itemId}/download": {
+      "get": {
+        "tags": ["Course Items"],
+        "summary": "下载课程文件",
+        "description": "下载课程相关文件",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "文件下载成功",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/activity-logs": {
+      "get": {
+        "tags": ["Activity Logs"],
+        "summary": "获取活动日志",
+        "description": "获取最近的活动日志",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "返回数量",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "maximum": 50
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "description": "起始时间戳",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取活动日志",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ActivityLog"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Activity Logs"],
+        "summary": "创建活动日志",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityLogInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "日志创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ActivityLog"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/polls": {
+      "get": {
+        "tags": ["Opinion Polls"],
+        "summary": "获取问卷列表",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "成功获取问卷列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OpinionPoll"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Opinion Polls"],
+        "summary": "创建问卷",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpinionPollInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "问卷创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OpinionPoll"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/polls/{pollId}": {
+      "get": {
+        "tags": ["Opinion Polls"],
+        "summary": "获取单个问卷",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取问卷详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OpinionPoll"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Opinion Polls"],
+        "summary": "删除问卷",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Poll deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/polls/{pollId}/responses": {
+      "post": {
+        "tags": ["Opinion Polls"],
+        "summary": "提交问卷回答",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pollId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PollResponseInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "问卷提交成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PollResponse"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/discussions": {
+      "get": {
+        "tags": ["Discussions"],
+        "summary": "获取讨论列表",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "query",
+            "description": "课程ID筛选",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "讨论类型",
+            "schema": {
+              "type": "string",
+              "enum": ["public", "question"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取讨论列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DiscussionData"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Discussions"],
+        "summary": "创建讨论帖",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscussionPostInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "讨论帖创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DiscussionPost"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/discussions/{postId}/like": {
+      "put": {
+        "tags": ["Discussions"],
+        "summary": "点赞讨论帖",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "点赞成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "likes": {
+                          "type": "integer"
+                        },
+                        "likedBy": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/discussions/{postId}/replies": {
+      "post": {
+        "tags": ["Discussions"],
+        "summary": "添加回复",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "回复添加成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Reply"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/chat": {
+      "post": {
+        "tags": ["AI Service"],
+        "summary": "AI聊天",
+        "description": "与AI助手进行对话",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "example": "如何使用React Hooks?"
+                  },
+                  "topicId": {
+                    "type": "string"
+                  },
+                  "conversationHistory": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": ["user", "assistant"]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI回复成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "response": {
+                          "type": "string"
+                        },
+                        "conversationId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/upload": {
+      "post": {
+        "tags": ["AI Service"],
+        "summary": "文件上传(AI分析)",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "topicId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "文件上传成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "fileId": {
+                          "type": "string"
+                        },
+                        "fileName": {
+                          "type": "string"
+                        },
+                        "analysis": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用JWT token进行身份验证"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "user_1"
+          },
+          "name": {
+            "type": "string",
+            "example": "张老师"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "teacher@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["teacher", "student", "ta"],
+            "example": "teacher"
+          }
+        }
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "activity_1705392000000"
+          },
+          "title": {
+            "type": "string",
+            "example": "Week 1 Quiz"
+          },
+          "activityType": {
+            "type": "string",
+            "enum": ["quiz", "open-question", "scales-question", "mind-map", "ppt-generator"],
+            "example": "quiz"
+          },
+          "edited": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1705392000000
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          },
+          "slides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Slide"
+            }
+          },
+          "timerMinutes": {
+            "type": "integer",
+            "example": 5
+          },
+          "timerSeconds": {
+            "type": "integer",
+            "example": 0
+          },
+          "code": {
+            "type": "string",
+            "description": "Markdown代码 (MindMap类型)"
+          }
+        }
+      },
+      "ActivityInput": {
+        "type": "object",
+        "required": ["title", "activityType"],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "activityType": {
+            "type": "string",
+            "enum": ["quiz", "open-question", "scales-question", "mind-map", "ppt-generator"]
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          },
+          "slides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Slide"
+            }
+          },
+          "timerMinutes": {
+            "type": "integer"
+          },
+          "timerSeconds": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "text": {
+            "type": "string",
+            "example": "What is 2+2?"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["3", "4", "5"]
+          },
+          "correctAnswer": {
+            "type": "integer",
+            "description": "正确答案索引",
+            "example": 1
+          },
+          "points": {
+            "type": "integer",
+            "example": 10
+          }
+        }
+      },
+      "Slide": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          },
+          "scaleOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScaleOption"
+            }
+          }
+        }
+      },
+      "ScaleOption": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "非常同意"
+          },
+          "value": {
+            "type": "integer",
+            "example": 5
+          }
+        }
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "course_1"
+          },
+          "code": {
+            "type": "string",
+            "example": "COMP1001"
+          },
+          "title": {
+            "type": "string",
+            "example": "Introduction to Programming"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Open", "Closed", "Coming Soon"],
+            "example": "Open"
+          },
+          "schedule": {
+            "type": "string",
+            "example": "Mon 18:00-21:00"
+          },
+          "students": {
+            "type": "string",
+            "example": "45"
+          },
+          "year": {
+            "type": "string",
+            "example": "2025"
+          },
+          "semester": {
+            "type": "string",
+            "enum": ["Sem1", "Sem2", "Summer Term", "Winter Term"],
+            "example": "Sem1"
+          },
+          "weekday": {
+            "type": "string",
+            "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            "example": "Monday"
+          },
+          "classTime": {
+            "type": "string",
+            "example": "18:00-21:00"
+          },
+          "capacity": {
+            "type": "string",
+            "example": "50"
+          }
+        }
+      },
+      "CourseInput": {
+        "type": "object",
+        "required": ["code", "title", "status"],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Open", "Closed", "Coming Soon"]
+          },
+          "students": {
+            "type": "string"
+          },
+          "year": {
+            "type": "string"
+          },
+          "semester": {
+            "type": "string"
+          },
+          "weekday": {
+            "type": "string"
+          },
+          "classTime": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "string"
+          }
+        }
+      },
+      "CourseItems": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItem"
+            }
+          },
+          "assignment": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItem"
+            }
+          },
+          "quiz": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentItem"
+            }
+          }
+        }
+      },
+      "ContentItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "item_1"
+          },
+          "title": {
+            "type": "string",
+            "example": "Lecture 1 Slides"
+          },
+          "content": {
+            "type": "string",
+            "example": "Introduction to the course"
+          },
+          "file": {
+            "type": "string",
+            "example": "lecture1.pdf"
+          },
+          "date": {
+            "type": "string",
+            "example": "01/15/2025"
+          }
+        }
+      },
+      "ContentItemInput": {
+        "type": "object",
+        "required": ["type", "title"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["content", "assignment", "quiz"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          }
+        }
+      },
+      "Response": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "response_1"
+          },
+          "activityId": {
+            "type": "string"
+          },
+          "studentName": {
+            "type": "string",
+            "example": "张三"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "answers": {
+            "type": "array",
+            "description": "Quiz类型回答",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "score": {
+            "type": "integer"
+          },
+          "totalPoints": {
+            "type": "integer"
+          },
+          "answer": {
+            "type": "string",
+            "description": "OpenQuestion类型回答"
+          },
+          "scaleAnswers": {
+            "type": "object",
+            "description": "ScalesQuestion类型回答",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "ResponseInput": {
+        "type": "object",
+        "required": ["studentName"],
+        "properties": {
+          "studentName": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "score": {
+            "type": "integer"
+          },
+          "totalPoints": {
+            "type": "integer"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "scaleAnswers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "ActivityLog": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["created", "shared", "edited"]
+          },
+          "title": {
+            "type": "string",
+            "example": "Created: Week 1 Quiz"
+          },
+          "description": {
+            "type": "string",
+            "example": "Quiz added to COMP1001"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "activityId": {
+            "type": "string"
+          }
+        }
+      },
+      "ActivityLogInput": {
+        "type": "object",
+        "required": ["type", "title", "description", "activityId"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["created", "shared", "edited"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "activityId": {
+            "type": "string"
+          }
+        }
+      },
+      "OpinionPoll": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PollQuestion"
+            }
+          },
+          "allowAnonymous": {
+            "type": "boolean"
+          },
+          "responses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PollResponse"
+            }
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "OpinionPollInput": {
+        "type": "object",
+        "required": ["title", "questions"],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PollQuestion"
+            }
+          },
+          "allowAnonymous": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PollQuestion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["single-choice", "multiple-choice", "text"]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PollResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pollId": {
+            "type": "string"
+          },
+          "respondentName": {
+            "type": "string"
+          },
+          "isAnonymous": {
+            "type": "boolean"
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "submittedAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PollResponseInput": {
+        "type": "object",
+        "required": ["respondentName", "answers"],
+        "properties": {
+          "respondentName": {
+            "type": "string"
+          },
+          "isAnonymous": {
+            "type": "boolean"
+          },
+          "answers": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "DiscussionData": {
+        "type": "object",
+        "properties": {
+          "publicDiscussions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscussionPost"
+            }
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscussionPost"
+            }
+          }
+        }
+      },
+      "DiscussionPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "authorId": {
+            "type": "string"
+          },
+          "authorName": {
+            "type": "string"
+          },
+          "userRole": {
+            "type": "string",
+            "enum": ["teacher", "student", "ta"]
+          },
+          "isAnonymous": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["public", "question"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "likes": {
+            "type": "integer"
+          },
+          "likedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reply"
+            }
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "DiscussionPostInput": {
+        "type": "object",
+        "required": ["type", "title", "content"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["public", "question"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "isAnonymous": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Reply": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "authorId": {
+            "type": "string"
+          },
+          "authorName": {
+            "type": "string"
+          },
+          "userRole": {
+            "type": "string",
+            "enum": ["teacher", "student", "ta"]
+          },
+          "content": {
+            "type": "string"
+          },
+          "likes": {
+            "type": "integer"
+          },
+          "likedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "example": 50
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 3
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "INVALID_ACTIVITY_TYPE"
+              },
+              "message": {
+                "type": "string",
+                "example": "Activity type must be one of: quiz, open-question, scales-question"
+              },
+              "details": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "未授权 - Token无效或过期",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "INVALID_TOKEN",
+                "message": "Token无效或过期"
+              }
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "RESOURCE_NOT_FOUND",
+                "message": "Resource not found"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

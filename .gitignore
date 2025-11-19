@@ -1,0 +1,34 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/venv/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads and static files
+backend/uploads/*.pdf
+backend/uploads/*.xlsx
+backend/static/*.png

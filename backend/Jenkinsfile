@@ -1,0 +1,145 @@
+pipeline {
+    agent any
+
+    environment {
+        // 可根据需要设置 Python 路径，一般系统默认 python3 即可
+        PYTHON = 'python3'
+        PIP = 'pip3'
+        GITHUB_TOKEN = credentials('token')
+        DB_HOST = '43.163.233.241'
+        DB_PORT = '3306'
+        DB_CREDS = credentials('database')
+
+        DB_NAME = 'group-11-project'
+    }
+
+    stages {
+        // =========================
+        // 1. 拉取代码
+        // =========================
+        stage('Checkout') {
+            steps {
+                echo '🔃 正在从 Git 拉取代码...'
+                // 如果你使用 Git SCM 方式，Jenkins 会自动 checkout，此步可省略
+                // 但如果你想显式指定，也可以用如下方式（不推荐重复，通常用 SCM 拉取）
+                git branch: 'main', url: 'https://gitee.com/bigorange074/project_backend_local.git'
+            }
+        }
+
+        // =========================
+        // 2. 设置 Python 虚拟环境
+        // =========================
+        stage('Setup Virtual Environment') {
+            steps {
+                echo '🐍 正在设置 Python 虚拟环境...'
+                sh '''
+                    # 创建虚拟环境目录
+                    python3 -m venv venv
+                    # 激活虚拟环境
+                    source venv/bin/activate
+
+                    # 升级 pip
+                    pip install --upgrade pip
+                '''
+            }
+        }
+
+        // =========================
+        // 3. 安装依赖包
+        // =========================
+        stage('Install Dependencies') {
+            steps {
+                echo '📦 正在安装 Python 依赖...'
+                sh '''
+                    source venv/bin/activate
+                    pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+                '''
+            }
+        }
+
+        // =========================
+        
+        
+        stage('run DB Connection Test') {
+            steps {
+                sh '''
+                    source venv/bin/activate
+                    export DB_HOST=${DB_HOST}
+                    export DB_NAME=${DB_NAME}
+                    export DB_PORT=${DB_PORT}
+                    export DB_USER=${DB_CREDS_USR}
+                    export DB_PASSWORD=${DB_CREDS_PSW}
+                    echo '数据库user: ${DB_CREDS_USR}'
+                    echo '数据库密码: ${DB_CREDS_PSW}'
+
+
+                    echo "🔐 正在连接数据库..."
+                    python3 src/db_connection.py
+                '''
+            }
+        }
+    
+        //stage('run LLM Connection Test') {
+        //    steps {
+        //        sh '''
+        //            source venv/bin/activate
+        //            export GITHUB_TOKEN=${GITHUB_TOKEN}
+        //            
+        //            echo "正在连接 GitHub LLM 服务..."
+        //            python3 src/LLM.py
+        //        '''
+        //    }
+        //}
+        // =========================
+        // 5. （可选）运行 Flask 应用（开发模式，仅演示）
+        // =========================
+        stage('Run Flask App') {
+            
+            steps {
+                echo '🚀 正在启动 Flask 开发服务器（仅用于演示，勿用于生产）...'
+                sh '''
+                    source venv/bin/activate
+                    export FLASK_APP=src/flask_backend.py
+                    export FLASK_ENV=development
+                    export GITHUB_TOKEN=${GITHUB_TOKEN}
+                    export DB_HOST=${DB_HOST}
+                    export DB_NAME=${DB_NAME}
+                    export DB_PORT=${DB_PORT}
+                    export DB_USER=${DB_CREDS_USR}
+                    export DB_PASSWORD=${DB_CREDS_PSW}
+                    #flask run --host=0.0.0.0 --port=5000
+                    gunicorn -w 5 --bind 0.0.0.0:5000 "src.flask_backend:app"
+                '''
+            }
+        }
+
+        // =========================
+        // 6. （可选）构建 Docker 镜像 或 部署到服务器
+        // =========================
+        // 你可以在此处继续扩展，比如：
+        // - 使用 Dockerfile 构建镜像
+        // - 推送镜像到 Registry
+        // - 通过 SSH 部署到远程服务器
+        // 这部分根据你的部署目标来定制，如需要可继续问我！
+    }
+
+   
+post {
+        success {
+            echo '✅ CI/CD 流水线执行成功！'
+            
+        }
+
+        failure {
+            echo '❌ CI/CD 流水线执行失败，请检查日志！'
+            
+        }
+
+        
+        always {
+            echo '📋 流水线执行完毕（无论成功或失败）'
+        }
+    }
+
+
+}
