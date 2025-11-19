@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login - Learning Platform</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义样式，保持与注册页面一致 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            red: '#C8102E',
+                            darkRed: '#A00A23',
+                            lightRed: '#F8E0E6'
+                        },
+                        neutral: {
+                            dark: '#333333',
+                            medium: '#666666',
+                            light: '#F5F5F5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary-red/50 focus:border-primary-red focus:outline-none transition-all;
+            }
+            .btn-hover {
+                @apply hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300;
+            }
+            .btn-loading {
+                @apply opacity-70 cursor-not-allowed hover:translate-y-0 hover:shadow-none;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-neutral-light font-sans text-neutral-dark min-h-screen">
+    <!-- 主容器 -->
+    <div class="container mx-auto px-4 py-12 md:py-20 flex flex-col items-center justify-center min-h-screen">
+        <!-- 平台Logo和标题 -->
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-primary-red rounded-lg flex items-center justify-center mx-auto mb-4">
+                <i class="fa fa-graduation-cap text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-bold text-neutral-dark">Learning Platform</h1>
+            <p class="text-neutral-medium mt-2">Simplified learning management</p>
+        </div>
+
+        <!-- 登录卡片 -->
+        <div
+            class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-500">
+            <!-- 顶部标题栏 -->
+            <div class="bg-primary-red py-4 px-6">
+                <h2 class="text-xl md:text-2xl font-bold text-white">Sign In</h2>
+                <p class="text-primary-lightRed text-sm mt-1">Access your learning dashboard</p>
+            </div>
+
+            <!-- 登录表单区域 -->
+            <div class="p-6 md:p-8">
+                <form id="login-form" class="space-y-6">
+                    <!-- 邮箱/用户名输入 -->
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-neutral-dark mb-2">Email
+                            Address</label>
+                        <input type="email" id="login-email"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg input-focus"
+                            placeholder="your.email@example.com" required>
+                    </div>
+
+                    <!-- 密码输入 -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="login-password"
+                                class="block text-sm font-medium text-neutral-dark">Password</label>
+                            <!-- 修改了这里的链接地址 -->
+                            <a href="forgetpassword.html" class="text-xs text-primary-red hover:underline">Forgot
+                                Password?</a>
+                        </div>
+                        <div class="relative">
+                            <input type="password" id="login-password"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg input-focus pr-10"
+                                placeholder="Enter your password" required>
+                            <button type="button" id="toggle-password"
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-medium">
+                                <i class="fa fa-eye-slash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 错误提示 -->
+                    <p id="login-error" class="text-red-500 text-sm mt-1 hidden">Invalid email or password</p>
+                    <p id="network-error" class="text-red-500 text-sm mt-1 hidden">Network error, please check your
+                        connection</p>
+                    <p id="server-error" class="text-red-500 text-sm mt-1 hidden">Server error, please try again later
+                    </p>
+                    <p id="detailed-error" class="text-orange-500 text-xs mt-1 hidden font-mono"></p>
+
+                    <!-- 登录按钮 -->
+                    <button type="submit" id="login-btn"
+                        class="w-full bg-primary-red hover:bg-primary-darkRed text-white font-medium py-3 px-4 rounded-lg btn-hover">
+                        <span id="btn-text">Sign In</span>
+                        <span id="btn-loading" class="hidden"><i class="fa fa-spinner fa-spin mr-2"></i>Signing
+                            in...</span>
+                    </button>
+
+                    <!-- 注册链接 -->
+                    <div class="text-center pt-4 border-t border-gray-100">
+                        <p class="text-sm text-neutral-medium">
+                            Don't have an account?
+                            <a href="email check.html" class="text-primary-red hover:underline font-medium">Create
+                                Account</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="mt-8 text-center text-sm text-neutral-medium">
+            <p>© All rights reserved.</p>
+            <p class="mt-1">If you have any problems, please contact <a href="mailto:support@example.com"
+                    class="text-primary-red hover:underline">support@example.com</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 后端接口配置 - 已更新为新的接口地址
+        const API_CONFIG = {
+            loginUrl: 'http://43.163.233.241:8081/account/login/email/psw',
+            timeout: 15000,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        };
+
+        // DOM元素
+        const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('login-email');
+        const passwordInput = document.getElementById('login-password');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const loginBtn = document.getElementById('login-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnLoading = document.getElementById('btn-loading');
+        const loginError = document.getElementById('login-error');
+        const networkError = document.getElementById('network-error');
+        const serverError = document.getElementById('server-error');
+        const detailedError = document.getElementById('detailed-error');
+
+        // 页面加载时检查
+        document.addEventListener('DOMContentLoaded', function () {
+            // 从本地存储获取邮箱认证页携带的邮箱，自动填充
+            const preFillEmail = localStorage.getItem('preFillEmail');
+            if (preFillEmail) {
+                emailInput.value = preFillEmail;
+                localStorage.removeItem('preFillEmail'); // 填充后清除，避免重复使用
+                passwordInput.focus(); // 自动聚焦到密码框，提升体验
+            }
+
+            // 检查URL参数，显示注册成功提示
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('registered') === 'true') {
+                showToast('Registration successful! Please sign in.', true);
+            }
+
+            // 事件监听
+            loginForm.addEventListener('submit', handleLogin);
+            togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+
+            // 检查本地存储中是否有保存的邮箱
+            const savedEmail = localStorage.getItem('registrationEmail');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+                // 注册后清除存储的邮箱，只在首次登录时自动填充
+                localStorage.removeItem('registrationEmail');
+            }
+        });
+
+        /**
+         * 处理登录逻辑
+         */
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            // 简单前端验证
+            if (!email || !password) {
+                showError('login', 'Please enter both email and password');
+                return;
+            }
+
+            // 隐藏所有错误提示
+            hideAllErrors();
+
+            // 显示加载状态
+            showLoadingState(true);
+
+            try {
+                // 使用AbortController实现超时控制
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+
+                // 调用后端登录接口
+                const response = await fetch(API_CONFIG.loginUrl, {
+                    method: 'POST',
+                    headers: API_CONFIG.headers,
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                // 获取响应内容
+                const responseText = await response.text();
+                console.log('Login Response:', responseText);
+
+                // 解析响应
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error('JSON Parse Error:', jsonError);
+                    showError('server', 'Invalid response from server');
+                    showLoadingState(false);
+                    return;
+                }
+
+                // 处理响应
+                if (!response.ok) {
+                    detailedError.textContent = `Error ${response.status}: ${result.msg || 'Login failed'}`;
+                    detailedError.classList.remove('hidden');
+
+                    if (response.status === 401 || response.status === 400) {
+                        showError('login', result.msg || 'Invalid email or password');
+                    } else if (response.status >= 500) {
+                        showError('server');
+                    } else {
+                        showError('login', 'Login failed. Please try again.');
+                    }
+
+                    showLoadingState(false);
+                    return;
+                }
+
+                // 登录成功
+                if (result.code === 200) {
+                    // 保存用户信息到本地存储
+                    localStorage.setItem('userEmail', email);
+                    localStorage.setItem('authToken', result.token || '');
+
+                    // 如果有用户详细信息，也保存起来
+                    if (result.data && result.data.userInfo) {
+                        localStorage.setItem('userInfo', JSON.stringify(result.data.userInfo));
+                    }
+
+                    // 显示成功提示
+                    showToast('Login successful!', true);
+
+                    // 跳转到主页
+                    setTimeout(() => {
+                        window.location.href = 'http://49.232.227.144/';
+                    }, 1000);
+                } else {
+                    detailedError.textContent = `Code ${result.code}: ${result.msg}`;
+                    detailedError.classList.remove('hidden');
+                    showError('login', result.msg || 'Login failed');
+                    showLoadingState(false);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+
+                if (error.name === 'AbortError') {
+                    showError('server', 'Request timed out');
+                } else {
+                    showError('network');
+                }
+
+                detailedError.textContent = error.message;
+                detailedError.classList.remove('hidden');
+                showLoadingState(false);
+            }
+        }
+
+        /**
+         * 切换密码可见性
+         */
+        function togglePasswordVisibility() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            // 切换图标
+            const icon = togglePasswordBtn.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        /**
+         * 显示特定类型的错误
+         */
+        function showError(type, message = null) {
+            hideAllErrors();
+
+            if (type === 'login') {
+                loginError.textContent = message || 'Invalid email or password';
+                loginError.classList.remove('hidden');
+                // 添加抖动效果
+                emailInput.classList.add('border-primary-red', 'animate-shake');
+                passwordInput.classList.add('border-primary-red', 'animate-shake');
+                setTimeout(() => {
+                    emailInput.classList.remove('animate-shake');
+                    passwordInput.classList.remove('animate-shake');
+                }, 500);
+            } else if (type === 'network') {
+                networkError.classList.remove('hidden');
+            } else if (type === 'server') {
+                serverError.textContent = message || 'Server error, please try again later';
+                serverError.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * 隐藏所有错误提示
+         */
+        function hideAllErrors() {
+            loginError.classList.add('hidden');
+            networkError.classList.add('hidden');
+            serverError.classList.add('hidden');
+            detailedError.classList.add('hidden');
+            emailInput.classList.remove('border-primary-red');
+            passwordInput.classList.remove('border-primary-red');
+        }
+
+        /**
+         * 显示/隐藏加载状态
+         */
+        function showLoadingState(isLoading) {
+            if (isLoading) {
+                loginBtn.disabled = true;
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+            } else {
+                loginBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        }
+
+        /**
+         * 显示Toast提示
+         */
+        function showToast(message, isSuccess = false) {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center toast-notification transition-all duration-300`;
+
+            if (isSuccess) {
+                toast.classList.add('bg-green-500', 'text-white');
+                toast.innerHTML = `<i class="fa fa-check-circle mr-2"></i>${message}`;
+            } else {
+                toast.classList.add('bg-primary-red', 'text-white');
+                toast.innerHTML = `<i class="fa fa-exclamation-circle mr-2"></i>${message}`;
+            }
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 添加抖动动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>

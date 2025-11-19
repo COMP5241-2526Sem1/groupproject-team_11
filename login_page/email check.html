@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Email Check - Complete Registration</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义样式 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            red: '#C8102E',
+                            darkRed: '#A00A23',
+                            lightRed: '#F8E0E6'
+                        },
+                        neutral: {
+                            dark: '#333333',
+                            medium: '#666666',
+                            light: '#F5F5F5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary-red/50 focus:border-primary-red focus:outline-none transition-all;
+            }
+            .btn-hover {
+                @apply hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300;
+            }
+            .step-active {
+                @apply bg-primary-red text-white border-primary-red;
+            }
+            .step-completed {
+                @apply bg-green-500 text-white border-green-500;
+            }
+            .step-pending {
+                @apply bg-white text-neutral-medium border-gray-300;
+            }
+            .btn-loading {
+                @apply opacity-70 cursor-not-allowed hover:translate-y-0 hover:shadow-none;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-neutral-light font-sans text-neutral-dark min-h-screen">
+    <!-- 主容器 -->
+    <div class="container mx-auto px-4 py-12 md:py-20 flex flex-col items-center justify-center min-h-screen">
+        <!-- 进度指示器 -->
+        <div class="w-full max-w-md mb-8">
+            <div class="flex justify-between items-center">
+                <!-- 步骤1：邮箱验证 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full border-2 step-active flex items-center justify-center mb-2">
+                        <i class="fa fa-envelope-o"></i>
+                    </div>
+                    <span class="text-sm font-medium">Email Check</span>
+                </div>
+
+                <!-- 连接线1 -->
+                <div class="flex-1 h-1 mx-2 bg-gray-300">
+                    <div class="h-full w-0 bg-primary-red transition-all duration-500"></div>
+                </div>
+
+                <!-- 步骤2：验证码 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full border-2 step-pending flex items-center justify-center mb-2">
+                        <i class="fa fa-key"></i>
+                    </div>
+                    <span class="text-sm font-medium">Verification</span>
+                </div>
+
+                <!-- 连接线2 -->
+                <div class="flex-1 h-1 mx-2 bg-gray-300">
+                    <div class="h-full w-0 bg-primary-red transition-all duration-500"></div>
+                </div>
+
+                <!-- 步骤3：设置密码 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full border-2 step-pending flex items-center justify-center mb-2">
+                        <i class="fa fa-lock"></i>
+                    </div>
+                    <span class="text-sm font-medium">Set Password</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片容器 -->
+        <div
+            class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-500">
+            <!-- 顶部标题栏 -->
+            <div class="bg-primary-red py-4 px-6">
+                <h1 class="text-[clamp(1.25rem,3vw,1.75rem)] font-bold text-white">Verify Your Email</h1>
+                <p class="text-primary-lightRed text-sm mt-1">Please enter your email address to receive verification
+                    code</p>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="p-6 md:p-8">
+                <!-- 步骤1：邮箱验证区域 -->
+                <div class="space-y-4">
+                    <div>
+                        <label for="email-input" class="block text-sm font-medium text-neutral-dark mb-2">Email
+                            Address</label>
+                        <input type="email" id="email-input"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg input-focus"
+                            placeholder="your.email@example.com" required>
+                        <!-- 错误提示 -->
+                        <p id="email-error" class="text-red-500 text-sm mt-1 hidden">Please enter a valid email address
+                            (e.g. xxx@xxx.com)</p>
+                        <p id="api-error" class="text-red-500 text-sm mt-1 hidden">Failed to send code, please try again
+                            later</p>
+                        <p id="email-not-supported" class="text-red-500 text-sm mt-1 hidden">This email is not
+                            supported, please use another one</p>
+                        <p id="network-error" class="text-red-500 text-sm mt-1 hidden">
+                            Unable to connect to server. Please try again later.
+                        </p>
+                        <p id="detailed-error" class="text-orange-500 text-xs mt-1 hidden font-mono"></p>
+                    </div>
+
+                    <!-- 发送验证码按钮（带加载状态） -->
+                    <button id="send-code-btn"
+                        class="w-full bg-primary-red hover:bg-primary-darkRed text-white font-medium py-3 px-4 rounded-lg btn-hover">
+                        <span id="btn-text">Send Verification Code</span>
+                        <span id="btn-loading" class="hidden"><i
+                                class="fa fa-spinner fa-spin mr-2"></i>Sending...</span>
+                    </button>
+
+                    <!-- 已有账号？去登录 链接（修改为与登录页面注册链接相似样式） -->
+                    <div class="text-center pt-4 border-t border-gray-100">
+                        <p class="text-sm text-neutral-medium">
+                            Already have an account?
+                            <a href="#" id="go-to-login-btn" class="text-primary-red hover:underline font-medium">Sign
+                                In</a>
+                        </p>
+                    </div>
+
+                    <!-- 重试按钮 -->
+                    <button id="retry-btn"
+                        class="w-full hidden bg-neutral-dark hover:bg-black text-white font-medium py-3 px-4 rounded-lg btn-hover">
+                        <i class="fa fa-refresh mr-2"></i>Retry Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="mt-8 text-center text-sm text-neutral-medium">
+            <p>© All rights reserved.</p>
+            <p class="mt-1">If you have any problems, please contact <a href="mailto:support@example.com"
+                    class="text-primary-red hover:underline">support@example.com</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 后端接口配置
+        const API_CONFIG = {
+            sendCodeUrl: 'http://43.163.233.241:8081/account/register/email/checkEmail',
+            timeout: 15000, // 超时时间15秒
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        };
+
+        // DOM元素
+        const emailInput = document.getElementById('email-input');
+        const sendCodeBtn = document.getElementById('send-code-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnLoading = document.getElementById('btn-loading');
+        const emailError = document.getElementById('email-error');
+        const apiError = document.getElementById('api-error');
+        const emailNotSupported = document.getElementById('email-not-supported');
+        const networkError = document.getElementById('network-error');
+        const detailedError = document.getElementById('detailed-error');
+        const retryBtn = document.getElementById('retry-btn');
+        const goToLoginBtn = document.getElementById('go-to-login-btn');
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 从本地存储加载可能保存的邮箱
+            const savedEmail = localStorage.getItem('registrationEmail');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+            }
+
+            // 事件监听
+            sendCodeBtn.addEventListener('click', sendVerificationCode);
+            retryBtn.addEventListener('click', sendVerificationCode);
+            goToLoginBtn.addEventListener('click', goToLoginPage);
+            emailInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendVerificationCode();
+                }
+            });
+        });
+
+        /**
+         * 跳转到登录页面
+         */
+        function goToLoginPage(e) {
+            e.preventDefault(); // 防止链接默认行为
+
+            // 可携带当前邮箱（如果已输入）到登录页自动填充
+            const currentEmail = emailInput.value.trim();
+            if (currentEmail) {
+                localStorage.setItem('preFillEmail', currentEmail); // 存储邮箱供登录页使用
+            }
+            window.location.href = 'login.html'; // 跳转到登录页面
+        }
+
+        /**
+         * 发送验证码到指定邮箱
+         */
+        async function sendVerificationCode() {
+            const email = emailInput.value.trim();
+
+            // 前端验证邮箱格式
+            if (!isValidEmail(email)) {
+                showError('email');
+                emailInput.classList.add('animate-shake');
+                setTimeout(() => emailInput.classList.remove('animate-shake'), 500);
+                return;
+            }
+
+            // 重置错误状态，显示加载
+            resetErrors();
+            showLoadingState(true);
+
+            try {
+                // 使用AbortController实现超时控制
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+
+                // 调用后端接口发送验证码
+                const response = await fetch(API_CONFIG.sendCodeUrl, {
+                    method: 'POST',
+                    headers: API_CONFIG.headers,
+                    body: JSON.stringify({ email: email }),
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+
+                clearTimeout(timeoutId);
+
+                // 获取原始响应文本用于调试
+                const responseText = await response.text();
+                console.log('API Response:', responseText);
+
+                // 尝试解析JSON
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error('JSON Parse Error:', jsonError);
+                    showError('api', `Invalid response format: ${jsonError.message}`);
+                    showLoadingState(false);
+                    return;
+                }
+
+                // 处理响应状态
+                if (!response.ok) {
+                    // 显示详细错误信息用于调试
+                    detailedError.textContent = `Error ${response.status}: ${result.msg || 'Unknown error'}`;
+                    detailedError.classList.remove('hidden');
+
+                    if (response.status === 403) {
+                        showError('not-supported');
+                    } else if (response.status >= 500) {
+                        showError('server');
+                    } else if (response.status === 404) {
+                        showError('api', 'API endpoint not found');
+                    } else if (response.status === 400) {
+                        showError('api', result.msg || 'Invalid request parameters');
+                    } else {
+                        showError('api');
+                    }
+                    showLoadingState(false);
+                    return;
+                }
+
+                // 处理成功响应 - 验证码已发送到邮箱
+                if (result.code === 200) {
+                    // 保存邮箱到本地存储，供下一步使用
+                    localStorage.setItem('registrationEmail', email);
+
+                    // 显示成功提示
+                    showToast('Verification code sent successfully!', true);
+
+                    // 延迟跳转，让用户看到成功提示
+                    setTimeout(() => {
+                        window.location.href = 'verification.html';
+                    }, 1500);
+                } else {
+                    detailedError.textContent = `Code ${result.code}: ${result.msg}`;
+                    detailedError.classList.remove('hidden');
+                    showError('api', result.msg || 'Failed to send verification code');
+                }
+            } catch (error) {
+                console.error('Request failed:', error);
+
+                if (error.name === 'AbortError') {
+                    detailedError.textContent = `Request timed out (${API_CONFIG.timeout / 1000}s)`;
+                } else {
+                    detailedError.textContent = error.message;
+                }
+                detailedError.classList.remove('hidden');
+
+                showError('network');
+            } finally {
+                showLoadingState(false);
+            }
+        }
+
+        /**
+         * 显示特定类型的错误
+         */
+        function showError(type, customMessage = null) {
+            resetErrors();
+
+            if (type === 'email') {
+                emailError.classList.remove('hidden');
+                emailInput.classList.add('border-red-500');
+            } else if (type === 'api') {
+                apiError.textContent = customMessage || 'Failed to send code, please try again later';
+                apiError.classList.remove('hidden');
+            } else if (type === 'not-supported') {
+                emailNotSupported.classList.remove('hidden');
+            } else if (type === 'network') {
+                networkError.classList.remove('hidden');
+                sendCodeBtn.classList.add('hidden');
+                retryBtn.classList.remove('hidden');
+            } else if (type === 'server') {
+                apiError.textContent = customMessage || 'Server error, please try again later';
+                apiError.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * 重置所有错误状态
+         */
+        function resetErrors() {
+            emailError.classList.add('hidden');
+            apiError.classList.add('hidden');
+            emailNotSupported.classList.add('hidden');
+            networkError.classList.add('hidden');
+            detailedError.classList.add('hidden');
+            emailInput.classList.remove('border-red-500');
+            sendCodeBtn.classList.remove('hidden');
+            retryBtn.classList.add('hidden');
+        }
+
+        /**
+         * 显示/隐藏加载状态
+         */
+        function showLoadingState(isLoading) {
+            if (isLoading) {
+                sendCodeBtn.classList.add('btn-loading');
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+                retryBtn.classList.add('hidden');
+            } else {
+                sendCodeBtn.classList.remove('btn-loading');
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        }
+
+        /**
+         * 验证邮箱格式
+         */
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        /**
+         * 显示Toast提示
+         */
+        function showToast(message, isSuccess = false) {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center toast-notification transition-all duration-300`;
+
+            if (isSuccess) {
+                toast.classList.add('bg-green-500', 'text-white');
+                toast.innerHTML = `<i class="fa fa-check-circle mr-2"></i>${message}`;
+            } else {
+                toast.classList.add('bg-primary-red', 'text-white');
+                toast.innerHTML = `<i class="fa fa-exclamation-circle mr-2"></i>${message}`;
+            }
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 添加抖动动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Verification - Complete Registration</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义样式 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            red: '#C8102E',
+                            darkRed: '#A00A23',
+                            lightRed: '#F8E0E6'
+                        },
+                        neutral: {
+                            dark: '#333333',
+                            medium: '#666666',
+                            light: '#F5F5F5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary-red/50 focus:border-primary-red focus:outline-none transition-all;
+            }
+            .btn-hover {
+                @apply hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300;
+            }
+            .verify-input {
+                @apply w-14 h-14 text-xl md:text-2xl font-bold border-2 border-gray-300 rounded-lg input-focus text-center;
+            }
+            .step-active {
+                @apply bg-primary-red text-white border-primary-red;
+            }
+            .step-completed {
+                @apply bg-green-500 text-white border-green-500;
+            }
+            .step-pending {
+                @apply bg-white text-neutral-medium border-gray-300;
+            }
+            .btn-loading {
+                @apply opacity-70 cursor-not-allowed hover:translate-y-0 hover:shadow-none;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-neutral-light font-sans text-neutral-dark min-h-screen">
+    <!-- 主容器 -->
+    <div class="container mx-auto px-4 py-12 md:py-20 flex flex-col items-center justify-center min-h-screen">
+        <!-- 进度指示器 -->
+        <div class="w-full max-w-md mb-8">
+            <div class="flex justify-between items-center">
+                <!-- 步骤1：邮箱验证 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full border-2 step-completed flex items-center justify-center mb-2">
+                        <i class="fa fa-check"></i>
+                    </div>
+                    <span class="text-sm font-medium">Email Check</span>
+                </div>
+
+                <!-- 连接线1 -->
+                <div class="flex-1 h-1 mx-2 bg-gray-300">
+                    <div class="h-full w-full bg-primary-red transition-all duration-500"></div>
+                </div>
+
+                <!-- 步骤2：验证码 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full border-2 step-active flex items-center justify-center mb-2">
+                        <i class="fa fa-key"></i>
+                    </div>
+                    <span class="text-sm font-medium">Verification</span>
+                </div>
+
+                <!-- 连接线2 -->
+                <div class="flex-1 h-1 mx-2 bg-gray-300">
+                    <div class="h-full w-0 bg-primary-red transition-all duration-500"></div>
+                </div>
+
+                <!-- 步骤3：设置密码 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full border-2 step-pending flex items-center justify-center mb-2">
+                        <i class="fa fa-lock"></i>
+                    </div>
+                    <span class="text-sm font-medium">Set Password</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片容器 -->
+        <div
+            class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-500">
+            <!-- 顶部标题栏 -->
+            <div class="bg-primary-red py-4 px-6">
+                <h1 class="text-[clamp(1.25rem,3vw,1.75rem)] font-bold text-white">Verify Code</h1>
+                <p id="verification-description" class="text-primary-lightRed text-sm mt-1">Please enter the 6-digit
+                    code from your email</p>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="p-6 md:p-8">
+                <!-- 步骤2：验证码区域 -->
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-dark mb-3">Enter 6-digit verification
+                            code</label>
+                        <div class="flex justify-between gap-2 mb-4">
+                            <input type="text" maxlength="1" class="verify-input" data-index="0" inputmode="numeric"
+                                pattern="[0-9]">
+                            <input type="text" maxlength="1" class="verify-input" data-index="1" inputmode="numeric"
+                                pattern="[0-9]">
+                            <input type="text" maxlength="1" class="verify-input" data-index="2" inputmode="numeric"
+                                pattern="[0-9]">
+                            <input type="text" maxlength="1" class="verify-input" data-index="3" inputmode="numeric"
+                                pattern="[0-9]">
+                            <input type="text" maxlength="1" class="verify-input" data-index="4" inputmode="numeric"
+                                pattern="[0-9]">
+                            <input type="text" maxlength="1" class="verify-input" data-index="5" inputmode="numeric"
+                                pattern="[0-9]">
+                        </div>
+
+                        <!-- 错误提示 -->
+                        <p id="verification-error" class="text-red-500 text-sm mt-1 hidden">Invalid verification code,
+                            please try again</p>
+                        <p id="network-error" class="text-red-500 text-sm mt-1 hidden">Network error, please check your
+                            connection</p>
+                        <p id="server-error" class="text-red-500 text-sm mt-1 hidden">Server error, please try again
+                            later</p>
+                        <p id="detailed-error" class="text-orange-500 text-xs mt-1 hidden font-mono"></p>
+
+                        <!-- 重新发送 -->
+                        <div class="text-center text-sm">
+                            <p class="text-neutral-medium">
+                                Didn't receive the code?
+                                <button id="resend-btn" class="text-primary-red hover:underline font-medium">Resend
+                                    Code</button>
+                                <span id="resend-timer" class="hidden text-neutral-medium"> (Resend in <span
+                                        id="countdown">60</span>s)</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <button id="verify-code-btn"
+                        class="w-full bg-primary-red hover:bg-primary-darkRed text-white font-medium py-3 px-4 rounded-lg btn-hover"
+                        disabled>
+                        <span id="btn-text">Verify & Continue</span>
+                        <span id="btn-loading" class="hidden"><i
+                                class="fa fa-spinner fa-spin mr-2"></i>Verifying...</span>
+                    </button>
+
+                    <button id="back-to-email-btn"
+                        class="w-full bg-transparent border border-gray-300 text-neutral-dark font-medium py-3 px-4 rounded-lg hover:bg-primary-lightRed hover:border-primary-red/30 transition-colors">
+                        Back to Email
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="mt-8 text-center text-sm text-neutral-medium">
+            <p>© All rights reserved.</p>
+            <p class="mt-1">If you have any problems, please contact <a href="mailto:support@example.com"
+                    class="text-primary-red hover:underline">support@example.com</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 后端接口配置
+        const API_CONFIG = {
+            verifyCodeUrl: 'http://43.163.233.241:8081/account/register/email/captchaVerify',
+            resendCodeUrl: 'http://43.163.233.241:8081/account/register/email/checkEmail',
+            timeout: 15000,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        };
+
+        // DOM元素
+        const verifyInputs = document.querySelectorAll('.verify-input');
+        const verifyCodeBtn = document.getElementById('verify-code-btn');
+        const backToEmailBtn = document.getElementById('back-to-email-btn');
+        const resendBtn = document.getElementById('resend-btn');
+        const resendTimer = document.getElementById('resend-timer');
+        const countdownEl = document.getElementById('countdown');
+        const verificationDescription = document.getElementById('verification-description');
+        const verificationError = document.getElementById('verification-error');
+        const networkError = document.getElementById('network-error');
+        const serverError = document.getElementById('server-error');
+        const detailedError = document.getElementById('detailed-error');
+        const btnText = document.getElementById('btn-text');
+        const btnLoading = document.getElementById('btn-loading');
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 检查是否有保存的邮箱
+            const savedEmail = localStorage.getItem('registrationEmail');
+            if (!savedEmail) {
+                // 如果没有邮箱信息，返回第一步
+                window.location.href = 'email check.html';  // 修改这里的文件名
+                return;
+            }
+
+            // 更新描述，显示用户邮箱
+            verificationDescription.textContent = `Please enter the 6-digit code sent to ${maskEmail(savedEmail)}`;
+
+            // 验证码输入处理
+            verifyInputs.forEach((input, index) => {
+                // 只允许输入数字
+                input.addEventListener('keypress', function (e) {
+                    if (!/^\d$/.test(e.key)) e.preventDefault();
+                });
+
+                // 输入后自动跳转到下一个输入框
+                input.addEventListener('input', function () {
+                    if (this.value) {
+                        index < verifyInputs.length - 1 && verifyInputs[index + 1].focus();
+                    }
+                    checkVerificationComplete();
+                });
+
+                // 退格键返回上一个输入框
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Backspace' && !this.value && index > 0) {
+                        verifyInputs[index - 1].focus();
+                    }
+                });
+            });
+
+            // 事件监听 - 修改Back to Email按钮的跳转路径
+            verifyCodeBtn.addEventListener('click', verifyCode);
+            backToEmailBtn.addEventListener('click', function () {
+                window.location.href = 'email check.html';  // 关键修改：将email-check.html改为email check.html
+            });
+            resendBtn.addEventListener('click', resendVerificationCode);
+
+            // 开始倒计时
+            startResendCountdown();
+
+            // 聚焦第一个输入框
+            verifyInputs[0].focus();
+        });
+
+        /**
+         * 验证用户输入的验证码
+         */
+        async function verifyCode() {
+            // 隐藏所有错误提示
+            hideAllErrors();
+
+            // 获取用户输入的验证码
+            let userInputCode = '';
+            verifyInputs.forEach(input => {
+                userInputCode += input.value;
+            });
+
+            // 获取保存的邮箱
+            const savedEmail = localStorage.getItem('registrationEmail');
+            if (!savedEmail) {
+                window.location.href = 'email check.html';  // 修改这里的文件名
+                return;
+            }
+
+            // 显示加载状态
+            showLoadingState(true);
+
+            try {
+                // 使用AbortController实现超时控制
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+
+                // 调用后端接口验证验证码
+                const response = await fetch(API_CONFIG.verifyCodeUrl, {
+                    method: 'POST',
+                    headers: API_CONFIG.headers,
+                    body: JSON.stringify({
+                        email: savedEmail,
+                        captcha: userInputCode
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                // 获取响应内容
+                const responseText = await response.text();
+                console.log('Verification Response:', responseText);
+
+                // 解析响应
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (jsonError) {
+                    console.error('JSON Parse Error:', jsonError);
+                    showError('server', 'Invalid response from server');
+                    showLoadingState(false);
+                    return;
+                }
+
+                // 处理响应
+                if (!response.ok) {
+                    detailedError.textContent = `Error ${response.status}: ${result.msg || 'Verification failed'}`;
+                    detailedError.classList.remove('hidden');
+
+                    if (response.status === 400) {
+                        showError('verification', result.msg || 'Invalid verification code');
+                    } else if (response.status >= 500) {
+                        showError('server');
+                    } else {
+                        showError('verification', 'Verification failed. Please try again.');
+                    }
+
+                    showLoadingState(false);
+                    return;
+                }
+
+                // 验证码验证成功
+                if (result.code === 200) {
+                    // 保存验证码到本地存储，供下一步使用
+                    localStorage.setItem('verificationCode', userInputCode);
+
+                    // 显示成功提示
+                    showToast('Verification successful!', true);
+
+                    // 跳转到设置密码页面
+                    setTimeout(() => {
+                        window.location.href = 'set-password.html';
+                    }, 1000);
+                } else {
+                    detailedError.textContent = `Code ${result.code}: ${result.msg}`;
+                    detailedError.classList.remove('hidden');
+                    showError('verification', result.msg || 'Verification failed');
+                    showLoadingState(false);
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+
+                if (error.name === 'AbortError') {
+                    showError('server', 'Request timed out');
+                } else {
+                    showError('network');
+                }
+
+                detailedError.textContent = error.message;
+                detailedError.classList.remove('hidden');
+                showLoadingState(false);
+            }
+        }
+
+        /**
+         * 检查验证码是否输入完成
+         */
+        function checkVerificationComplete() {
+            let isComplete = true;
+            verifyInputs.forEach(input => {
+                if (!input.value) isComplete = false;
+            });
+            verifyCodeBtn.disabled = !isComplete;
+        }
+
+        /**
+         * 重新发送验证码倒计时
+         */
+        function startResendCountdown() {
+            let seconds = 60;
+            resendBtn.disabled = true;
+            resendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            resendTimer.classList.remove('hidden');
+
+            const countdownInterval = setInterval(() => {
+                seconds--;
+                countdownEl.textContent = seconds;
+
+                if (seconds <= 0) {
+                    clearInterval(countdownInterval);
+                    resendBtn.disabled = false;
+                    resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    resendTimer.classList.add('hidden');
+                }
+            }, 1000);
+        }
+
+        /**
+         * 重新发送验证码
+         */
+        async function resendVerificationCode() {
+            const savedEmail = localStorage.getItem('registrationEmail');
+            if (!savedEmail) {
+                window.location.href = 'email check.html';  // 修改这里的文件名
+                showToast('Please enter your email first', false);
+                return;
+            }
+
+            // 隐藏所有错误提示
+            hideAllErrors();
+
+            // 显示加载状态
+            resendBtn.disabled = true;
+            resendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+
+                const response = await fetch(API_CONFIG.resendCodeUrl, {
+                    method: 'POST',
+                    headers: API_CONFIG.headers,
+                    body: JSON.stringify({ email: savedEmail }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const result = await response.json();
+                    showToast(result.msg || 'Failed to resend code. Please try again.', false);
+                    resendBtn.disabled = false;
+                    resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    // 重置验证码输入框
+                    verifyInputs.forEach(input => input.value = '');
+                    verifyInputs[0].focus();
+                    verifyCodeBtn.disabled = true;
+
+                    // 重启倒计时
+                    startResendCountdown();
+                    showToast(`Verification code resent to ${maskEmail(savedEmail)}`, true);
+                } else {
+                    showToast(result.msg || 'Failed to resend verification code', false);
+                    resendBtn.disabled = false;
+                    resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } catch (error) {
+                console.error('Resend failed:', error);
+                showToast('Network error while resending code. Please try again.', false);
+                resendBtn.disabled = false;
+                resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        /**
+         * 显示特定类型的错误
+         */
+        function showError(type, message = null) {
+            hideAllErrors();
+
+            if (type === 'verification') {
+                verificationError.textContent = message || 'Invalid verification code, please try again';
+                verificationError.classList.remove('hidden');
+                // 添加抖动效果
+                verifyInputs.forEach(input => {
+                    input.classList.add('border-primary-red', 'animate-shake');
+                    setTimeout(() => input.classList.remove('animate-shake'), 500);
+                });
+            } else if (type === 'network') {
+                networkError.classList.remove('hidden');
+            } else if (type === 'server') {
+                serverError.textContent = message || 'Server error, please try again later';
+                serverError.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * 隐藏所有错误提示
+         */
+        function hideAllErrors() {
+            verificationError.classList.add('hidden');
+            networkError.classList.add('hidden');
+            serverError.classList.add('hidden');
+            detailedError.classList.add('hidden');
+            verifyInputs.forEach(input => {
+                input.classList.remove('border-primary-red');
+            });
+        }
+
+        /**
+         * 显示/隐藏加载状态
+         */
+        function showLoadingState(isLoading) {
+            if (isLoading) {
+                verifyCodeBtn.disabled = true;
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+            } else {
+                checkVerificationComplete();
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        }
+
+        /**
+         * 显示Toast提示
+         */
+        function showToast(message, isSuccess = false) {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center toast-notification transition-all duration-300`;
+
+            if (isSuccess) {
+                toast.classList.add('bg-green-500', 'text-white');
+                toast.innerHTML = `<i class="fa fa-check-circle mr-2"></i>${message}`;
+            } else {
+                toast.classList.add('bg-primary-red', 'text-white');
+                toast.innerHTML = `<i class="fa fa-exclamation-circle mr-2"></i>${message}`;
+            }
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        /**
+         * 隐藏邮箱中间部分，保护隐私
+         */
+        function maskEmail(email) {
+            const [localPart, domain] = email.split('@');
+            return localPart.length > 3
+                ? `${localPart.substring(0, 3)}***@${domain}`
+                : `${localPart}***@${domain}`;
+        }
+
+        // 添加抖动动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+
+</html>
